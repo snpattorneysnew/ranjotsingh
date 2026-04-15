@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
 import { BLOG_POSTS } from "@/data/blogs";
 
@@ -93,8 +93,22 @@ const _marqueeMid = Math.ceil(MARQUEE_OTHER_SERVICES.length / 2);
 const MARQUEE_OTHER_ROW1 = MARQUEE_OTHER_SERVICES.slice(0, _marqueeMid);
 const MARQUEE_OTHER_ROW2 = MARQUEE_OTHER_SERVICES.slice(_marqueeMid);
 
+// Types for the marquee data
+type SeoItem = {
+  cat: string;
+  text: string;
+};
+
+type MarqueeItems = string[] | SeoItem[];
+
+interface MarqueeSeoRowProps {
+  items: MarqueeItems;
+  reverse?: boolean;
+  variant?: "services" | "seo";
+}
+
 /** variant: "services" = visible cards; "seo" = invisible (background-matched) keyword rows */
-function MarqueeSeoRow({ items, reverse = false, variant = "services" }) {
+function MarqueeSeoRow({ items, reverse = false, variant = "services" }: MarqueeSeoRowProps) {
   const doubled = [...items, ...items];
   const isSeo = variant === "seo";
   return (
@@ -102,13 +116,13 @@ function MarqueeSeoRow({ items, reverse = false, variant = "services" }) {
       <div className={`marquee-track${reverse ? " marquee-rev" : ""}`}>
         {doubled.map((item, i) =>
           isSeo ? (
-            <article className="seo-card seo-card-seo-ghost" key={`${item.cat}-${item.text}-${i}`}>
-              <div className="seo-card-cat">{item.cat}</div>
-              <p className="seo-card-text">{item.text}</p>
+            <article className="seo-card seo-card-seo-ghost" key={`${(item as SeoItem).cat}-${(item as SeoItem).text}-${i}`}>
+              <div className="seo-card-cat">{(item as SeoItem).cat}</div>
+              <p className="seo-card-text">{(item as SeoItem).text}</p>
             </article>
           ) : (
-            <article className="seo-card seo-card-marquee" key={`${item}-${i}`}>
-              <p className="seo-card-text">{item}</p>
+            <article className="seo-card seo-card-marquee" key={`${item as string}-${i}`}>
+              <p className="seo-card-text">{item as string}</p>
             </article>
           )
         )}
@@ -118,7 +132,13 @@ function MarqueeSeoRow({ items, reverse = false, variant = "services" }) {
 }
 
 // ── reusable Modal ─────────────────────────────────────────────────────────────
-function Modal({ title, children, onClose }) {
+interface ModalProps {
+  title: string;
+  children: ReactNode;
+  onClose: () => void;
+}
+
+function Modal({ title, children, onClose }: ModalProps) {
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
@@ -140,8 +160,9 @@ function Modal({ title, children, onClose }) {
 function AppointmentFormBody() {
   const [form, setForm] = useState({ name: "", phone: "", email: "", service: "", message: "" });
   const [sent, setSent] = useState(false);
-  const handle = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
-  const submit = e => { e.preventDefault(); setSent(true); };
+  const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => 
+    setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+  const submit = (e: React.FormEvent) => { e.preventDefault(); setSent(true); };
   if (sent) {
     return (
       <div className="form-success">
@@ -167,7 +188,11 @@ function AppointmentFormBody() {
   );
 }
 
-function AppointmentForm({ onClose }) {
+interface AppointmentFormProps {
+  onClose: () => void;
+}
+
+function AppointmentForm({ onClose }: AppointmentFormProps) {
   return (
     <Modal title="Book an Appointment" onClose={onClose}>
       <AppointmentFormBody />
@@ -215,7 +240,7 @@ function TermsContent() {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function Page() {
-  const [modal, setModal] = useState(null); // null | 'appt' | 'privacy' | 'terms'
+  const [modal, setModal] = useState<null | 'appt' | 'privacy' | 'terms'>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const heroRef = useRef(null);
@@ -226,7 +251,7 @@ export default function Page() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const scrollTo = id => {
+  const scrollTo = (id: string) => {
     setMobileOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
@@ -644,7 +669,7 @@ export default function Page() {
       {/* ── NAVBAR ──────────────────────────────────────────────────────────── */}
       <nav className={`navbar${scrolled ? " scrolled" : ""}`}>
         <a className="navbar-logo" href="#home" onClick={() => scrollTo("home")}>
-          <img src="/ca_india_logo.png" alt="CA India Logo" onError={e => { e.target.style.display = "none"; }} />
+          <img src="/ca_india_logo.png" alt="CA India Logo" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
           <div className="navbar-brand">
             <div className="firm-name">Ranjot Singh & Associates LLP</div>
             <div className="firm-sub">Chartered Accountants</div>
@@ -704,13 +729,13 @@ export default function Page() {
           </div>
           <div className="hero-visual">
             <div className="hero-img-wrap">
-              <img src="/Ranjot_Singh_and_Associates_office_image.webp" alt="Office" onError={e => { e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='450'%3E%3Crect fill='%23112240'/%3E%3Ctext x='50%25' y='50%25' fill='%23c9a84c' text-anchor='middle' dy='.3em' font-size='48'%3E🏢%3C/text%3E%3C/svg%3E"; }} />
+              <img src="/Ranjot_Singh_and_Associates_office_image.webp" alt="Office" onError={(e) => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='450'%3E%3Crect fill='%23112240'/%3E%3Ctext x='50%25' y='50%25' fill='%23c9a84c' text-anchor='middle' dy='.3em' font-size='48'%3E🏢%3C/text%3E%3C/svg%3E"; }} />
             </div>
             <div className="hero-card">
               <div className="lbl">Best CA in Dehri-on-Sone</div>
             </div>
             <div className="ca-badge">
-              <img src="/ca_india_logo.png" alt="ICAI" onError={e => { e.target.style.display="none"; }} />
+              <img src="/ca_india_logo.png" alt="ICAI" onError={(e) => { (e.target as HTMLImageElement).style.display="none"; }} />
             </div>
           </div>
         </div>
@@ -734,7 +759,7 @@ export default function Page() {
           <div className="about-grid">
             <div>
               <div className="about-img">
-                <img src="/office_sitting_area.webp" alt="Our Office" onError={e => { e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='450'%3E%3Crect fill='%230a1628'/%3E%3Ctext x='50%25' y='50%25' fill='%23c9a84c' text-anchor='middle' dy='.3em' font-size='64'%3E🏢%3C/text%3E%3C/svg%3E"; }} />
+                <img src="/office_sitting_area.webp" alt="Our Office" onError={(e) => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='450'%3E%3Crect fill='%230a1628'/%3E%3Ctext x='50%25' y='50%25' fill='%23c9a84c' text-anchor='middle' dy='.3em' font-size='64'%3E🏢%3C/text%3E%3C/svg%3E"; }} />
               </div>
             </div>
             <div>
@@ -892,7 +917,7 @@ export default function Page() {
               <li onClick={() => setModal("appt")}>Book Appointment</li>
             </ul>
             <div style={{ marginTop:20 }}>
-              <img src="/ca_india_logo.png" alt="ICAI" style={{ height:40, opacity:0.7 }} onError={e => e.target.style.display="none"} />
+              <img src="/ca_india_logo.png" alt="ICAI" style={{ height:40, opacity:0.7 }} onError={(e) => (e.target as HTMLImageElement).style.display="none"} />
             </div>
           </div>
         </div>
